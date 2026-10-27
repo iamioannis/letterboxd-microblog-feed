@@ -42,6 +42,7 @@ def review_text(source_html: str) -> str:
 
 
 def make_post(item: ET.Element) -> str:
+    source_title = html.unescape(item.findtext("title", default="").strip())
     title = item.findtext("lb:filmTitle", default="", namespaces=NS).strip()
     year = item.findtext("lb:filmYear", default="", namespaces=NS).strip()
     rating = item.findtext("lb:memberRating", default="", namespaces=NS).strip()
@@ -56,7 +57,7 @@ def make_post(item: ET.Element) -> str:
     if rating:
         half_steps = round(float(rating) * 2)
         stars = "★" * (half_steps // 2) + ("½" if half_steps % 2 else "")
-    header = f"🍿 {title}{', ' + year if year else ''}{' - ' + stars if stars else ''}"
+    header = f"🍿 {source_title or title + (', ' + year if year else '') + (' - ' + stars if stars else '')}"
     lines = [f"<p>{html.escape(header)}</p>"]
     if description:
         for paragraph in re.split(r"\n\s*\n", description):

@@ -17,6 +17,7 @@ from pathlib import Path
 SOURCE = "https://letterboxd.com/iamioannis/rss/"
 LETTERBOXD = "https://letterboxd.com"
 NS = {"lb": "https://letterboxd.com"}
+REVIEW_GUID_PREFIX = "letterboxd-review-"
 
 
 class ReviewText(HTMLParser):
@@ -89,16 +90,18 @@ def convert(
         previous_root = ET.fromstring(previous_xml)
         for old in previous_root.findall("./channel/item"):
             guid = old.findtext("guid", default="").strip()
-            if guid and guid not in seen:
+            if guid.startswith(REVIEW_GUID_PREFIX) and guid not in seen:
                 old_items.append(old)
                 seen.add(guid)
 
     for item in source.findall("item"):
+        guid = item.findtext("guid", default="").strip()
+        if not guid.startswith(REVIEW_GUID_PREFIX):
+            continue
         date = item.findtext("pubDate", default="").strip()
         published = parsedate_to_datetime(date) if date else None
         if after and (not published or published.astimezone(timezone.utc) <= after):
             continue
-        guid = item.findtext("guid", default="").strip() or item.findtext("link", default="").strip()
         if guid in seen:
             old_items = [old for old in old_items if old.findtext("guid", default="").strip() != guid]
         target = ET.SubElement(channel, "item")

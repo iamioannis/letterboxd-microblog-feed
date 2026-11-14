@@ -6,7 +6,7 @@ This repository publishes only reviews from [Ioannis's Letterboxd RSS feed](http
 > Review text, when present  
 > 🔗 Letterboxd link
 
-Post bodies are Markdown, including a short `[Letterboxd](...)` link on the same line as the chain emoji. Reviews retained from the older HTML feed are converted to Markdown in the generated feed.
+Post bodies are Markdown, including a clickable full Letterboxd URL on the same line as the chain emoji: `🔗 [https://letterboxd.com/...](https://letterboxd.com/...)`. Reviews retained from the older HTML feed are converted to Markdown in the generated feed.
 
 The live feed is [feed.xml](https://iamioannis.github.io/letterboxd-microblog-feed/feed.xml). Micro.blog imports it into `iamioannis.micro.blog`, which serves `iamioannis.com`.
 

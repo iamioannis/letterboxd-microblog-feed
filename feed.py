@@ -65,20 +65,25 @@ def make_post(item: ET.Element) -> str:
     lines = [header]
     if description:
         lines.append(description)
-    lines.append(f"🔗 [Letterboxd]({link})")
+    lines.append(f"🔗 [{link}]({link})")
     return "\n\n".join(lines)
 
 
 def retained_post_as_markdown(old: ET.Element) -> None:
     """Convert posts saved by the previous HTML version of this feed."""
     description = old.find("description")
-    if description is None or not description.text or "<p>" not in description.text:
+    if description is None or not description.text:
+        return
+    link = old.findtext("link", default="").strip()
+    if description.text.endswith(f"🔗 [Letterboxd]({link})"):
+        description.text = description.text[: -len(f"🔗 [Letterboxd]({link})")] + f"🔗 [{link}]({link})"
+        return
+    if "<p>" not in description.text:
         return
     text = review_text(description.text)
-    link = old.findtext("link", default="").strip()
     if link and text.endswith(f"🔗 {link}"):
         text = text[: -len(f"🔗 {link}")].rstrip()
-        description.text = f"{text}\n\n🔗 [Letterboxd]({link})"
+        description.text = f"{text}\n\n🔗 [{link}]({link})"
 
 
 def convert(

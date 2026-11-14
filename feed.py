@@ -26,8 +26,11 @@ class ReviewText(HTMLParser):
         self.parts: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in {"p", "div", "br", "li"} and self.parts:
-            self.parts.append("\n")
+        if self.parts:
+            if tag in {"p", "div", "li"}:
+                self.parts.append("\n\n")
+            elif tag == "br":
+                self.parts.append("\n")
 
     def handle_data(self, data: str) -> None:
         self.parts.append(data)
@@ -59,12 +62,23 @@ def make_post(item: ET.Element) -> str:
         half_steps = round(float(rating) * 2)
         stars = "★" * (half_steps // 2) + ("½" if half_steps % 2 else "")
     header = f"🍿 {source_title or title + (', ' + year if year else '') + (' - ' + stars if stars else '')}"
-    lines = [f"<p>{html.escape(header)}</p>"]
+    lines = [header]
     if description:
-        for paragraph in re.split(r"\n\s*\n", description):
-            lines.append(f"<p>{html.escape(paragraph).replace(chr(10), '<br>')}</p>")
-    lines.append(f'<p>🔗 <a href="{html.escape(link, quote=True)}">{html.escape(link)}</a></p>')
-    return "\n".join(lines)
+        lines.append(description)
+    lines.append(f"🔗 [Letterboxd]({link})")
+    return "\n\n".join(lines)
+
+
+def retained_post_as_markdown(old: ET.Element) -> None:
+    """Convert posts saved by the previous HTML version of this feed."""
+    description = old.find("description")
+    if description is None or not description.text or "<p>" not in description.text:
+        return
+    text = review_text(description.text)
+    link = old.findtext("link", default="").strip()
+    if link and text.endswith(f"🔗 {link}"):
+        text = text[: -len(f"🔗 {link}")].rstrip()
+        description.text = f"{text}\n\n🔗 [Letterboxd]({link})"
 
 
 def convert(
@@ -91,6 +105,7 @@ def convert(
         for old in previous_root.findall("./channel/item"):
             guid = old.findtext("guid", default="").strip()
             if guid.startswith(REVIEW_GUID_PREFIX) and guid not in seen:
+                retained_post_as_markdown(old)
                 old_items.append(old)
                 seen.add(guid)
 
